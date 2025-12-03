@@ -6,7 +6,7 @@ import GasEstimator from '@/components/pools/GasEstimator';
 import TransactionTracker, { Transaction } from '@/components/pools/TransactionTracker';
 import SecurityAudit from '@/components/pools/SecurityAudit';
 import { calculatePrivacyScore, estimateGasCost } from '@/utils/privacyCalculations';
-import { createDeposit, generateStealthAddress, getPoolStatistics } from '@/lib/api';
+import { createDeposit, generateStealthAddress, getPoolStatistics, getTransactionCounts, getUserTransactions } from '@/lib/api';
 import { useWallet } from '@/contexts/WalletContext';
 
 export default function Pools() {
@@ -18,28 +18,101 @@ export default function Pools() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showSecurityInfo, setShowSecurityInfo] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [poolData, setPoolData] = useState({
     poolSize: 52000000,
     activeMixers: 2345,
     anonymitySet: 10000,
   });
+  const [transactionCounts, setTransactionCounts] = useState({
+    pending: 0,
+    processing: 0,
+    success: 0,
+    error: 0
+  });
+  const [userTransactions, setUserTransactions] = useState<Transaction[]>([]);
+
+  // Refresh data handler
+  const refreshData = async () => {
+    setIsRefreshing(true);
+    setError(null);
+    try {
+      const stats = await getPoolStatistics();
+      if (stats.success) {
+        setPoolData({
+          poolSize: stats.data.totalPoolSize || 52000000,
+          activeMixers: stats.data.activeMixers || 2345,
+          anonymitySet: stats.data.anonymitySet || 10000,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load pool stats:', error);
+      setError('Failed to load pool statistics. Please refresh the page.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Load pool statistics from database
   useEffect(() => {
     const loadPoolStats = async () => {
+      setIsRefreshing(true);
+      setError(null);
       try {
         const stats = await getPoolStatistics();
-        setPoolData({
-          poolSize: stats.total_pool_size || 52000000,
-          activeMixers: stats.active_mixers || 2345,
-          anonymitySet: stats.anonymity_set || 10000,
-        });
+        if (stats.success) {
+          setPoolData({
+            poolSize: stats.data.totalPoolSize || 52000000,
+            activeMixers: stats.data.activeMixers || 2345,
+            anonymitySet: stats.data.anonymitySet || 10000,
+          });
+        }
       } catch (error) {
         console.error('Failed to load pool stats:', error);
+        setError('Failed to load pool statistics. Please refresh the page.');
+      } finally {
+        setIsRefreshing(false);
       }
     };
+
+    const loadTransactionData = async () => {
+      try {
+        // Load transaction counts for filters
+        const counts = await getTransactionCounts();
+        setTransactionCounts(counts);
+        
+        // Load user transactions if wallet connected
+        if (account) {
+          const userTx = await getUserTransactions(account);
+          // Convert to Transaction format for compatibility
+          const formattedTx: Transaction[] = userTx.map((tx: any) => ({
+            id: `tx-${tx.id}`,
+            type: tx.tx_type === 'privacy_deposit' ? 'deposit' : tx.tx_type,
+            status: tx.status,
+            amount: tx.amount?.toString(),
+            timestamp: new Date(tx.created_at),
+            txHash: tx.tx_hash,
+            privacyLevel: tx.privacy_level
+          }));
+          setUserTransactions(formattedTx);
+        }
+      } catch (error) {
+        console.error('Failed to load transaction data:', error);
+      }
+    };
+
     loadPoolStats();
-  }, []);
+    loadTransactionData();
+    
+    // Auto-refresh every 30 seconds for real-time updates
+    const interval = setInterval(() => {
+      loadPoolStats();
+      loadTransactionData();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [account]);
 
   const privacyLevels = [
     {
@@ -163,13 +236,36 @@ export default function Pools() {
         )
       );
 
-      // Refresh pool stats
-      const stats = await getPoolStatistics();
-      setPoolData({
-        poolSize: stats.total_pool_size || poolData.poolSize,
-        activeMixers: stats.active_mixers || poolData.activeMixers,
-        anonymitySet: stats.anonymity_set || poolData.anonymitySet,
-      });
+      // Refresh pool stats and transaction data
+      const [stats, userTx] = await Promise.all([
+        getPoolStatistics(),
+        account ? getUserTransactions(account) : Promise.resolve([])
+      ]);
+      
+      if (stats.success) {
+        setPoolData({
+          poolSize: stats.data.totalPoolSize || poolData.poolSize,
+          activeMixers: stats.data.activeMixers || poolData.activeMixers,
+          anonymitySet: stats.data.anonymitySet || poolData.anonymitySet,
+        });
+      }
+      
+      if (account && userTx.length > 0) {
+        const formattedTx: Transaction[] = userTx.map((tx: any) => ({
+          id: `tx-${tx.id}`,
+          type: tx.tx_type === 'privacy_deposit' ? 'deposit' : tx.tx_type,
+          status: tx.status,
+          amount: tx.amount?.toString(),
+          timestamp: new Date(tx.created_at),
+          txHash: tx.tx_hash,
+          privacyLevel: tx.privacy_level
+        }));
+        setUserTransactions(formattedTx);
+      }
+      
+      // Refresh transaction counts
+      const counts = await getTransactionCounts();
+      setTransactionCounts(counts);
 
       // Clear deposit amount
       setDepositAmount('');
@@ -193,20 +289,20 @@ export default function Pools() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const poolStats = [
+  const poolStatistics = [
     { 
       label: 'Total Pool Size', 
-      value: '$52M',
-      tooltip: 'Total funds available in privacy pool'
+      value: `$${(poolData.poolSize / 1000000).toFixed(1)}M`,
+      tooltip: 'Total funds available in privacy pool - dynamically updated'
     },
     { 
       label: 'Active Mixers', 
-      value: '2,345',
-      tooltip: 'Active users currently mixing'
+      value: poolData.activeMixers.toLocaleString(),
+      tooltip: 'Active users currently mixing - real-time count'
     },
     { 
       label: 'Anonymity Set', 
-      value: '10,000+',
+      value: poolData.anonymitySet.toLocaleString() + '+',
       tooltip: 'Total users in anonymity set - larger means more anonymous'
     },
     { 
@@ -228,6 +324,30 @@ export default function Pools() {
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold mb-2">Privacy Pools</h1>
             <p className="text-neutral-300">Transaction mixing and stealth addresses for enhanced anonymity</p>
+            
+            {/* Error Display */}
+            {error && (
+              <div className="mt-4 p-3 bg-semantic-error/10 border border-semantic-error/20 rounded-lg">
+                <p className="text-semantic-error text-sm">{error}</p>
+                <button 
+                  onClick={() => {
+                    setError(null);
+                    refreshData();
+                  }}
+                  className="mt-2 text-semantic-error text-xs hover:underline"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+            
+            {/* Loading/Refresh Indicator */}
+            {isRefreshing && (
+              <div className="mt-4 flex items-center justify-center space-x-2 text-neutral-300">
+                <div className="animate-spin w-4 h-4 border-2 border-neutral-300 border-t-primary-500 rounded-full"></div>
+                <span className="text-sm">Refreshing data...</span>
+              </div>
+            )}
             
             {/* Security Info Toggle */}
             <button
@@ -255,7 +375,7 @@ export default function Pools() {
 
           {/* Pool Stats dengan Tooltip */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-            {poolStats.map((stat, index) => (
+            {poolStatistics.map((stat, index) => (
               <div
                 key={index}
                 className="bg-neutral-50 rounded-xl p-4 border border-neutral-400/20 group relative"
@@ -338,8 +458,17 @@ export default function Pools() {
                   disabled={!depositAmount || parseFloat(depositAmount) <= 0 || isLoading}
                   className="w-full px-6 py-4 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-700 transition-all duration-fast shadow-glow flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span>{isLoading ? 'Processing...' : 'Deposit to Pool'}</span>
-                  {!isLoading && <ArrowRight className="w-5 h-5" />}
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                      <span>Processing Deposit...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Deposit to Pool</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -402,7 +531,14 @@ export default function Pools() {
                   disabled={isLoading}
                   className="w-full px-6 py-4 bg-accent-500 text-white rounded-xl font-semibold hover:bg-accent-600 transition-all duration-fast shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? 'Generating...' : 'Generate Stealth Address'}
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                      Generating Address...
+                    </>
+                  ) : (
+                    'Generate Stealth Address'
+                  )}
                 </button>
 
                 <div className="p-4 bg-semantic-warning/10 rounded-lg border border-semantic-warning/20">
@@ -419,6 +555,7 @@ export default function Pools() {
             <TransactionTracker 
               transactions={transactions}
               onClearAll={() => setTransactions([])}
+              transactionCounts={transactionCounts}
             />
           </div>
 

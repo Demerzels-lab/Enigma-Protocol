@@ -18,9 +18,15 @@ export interface Transaction {
 interface TransactionTrackerProps {
   transactions: Transaction[];
   onClearAll?: () => void;
+  transactionCounts?: {
+    pending: number;
+    processing: number;
+    success: number;
+    error: number;
+  };
 }
 
-export default function TransactionTracker({ transactions, onClearAll }: TransactionTrackerProps) {
+export default function TransactionTracker({ transactions, onClearAll, transactionCounts }: TransactionTrackerProps) {
   const [filter, setFilter] = useState<'all' | TransactionStatus>('all');
 
   const filteredTransactions = filter === 'all' 
@@ -77,22 +83,26 @@ export default function TransactionTracker({ transactions, onClearAll }: Transac
 
       {/* Filter */}
       <div className="flex flex-wrap gap-2 mb-6">
-        {(['all', 'pending', 'processing', 'success', 'error'] as const).map((status) => (
-          <button
-            key={status}
-            onClick={() => setFilter(status)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              filter === status
-                ? 'bg-primary-500 text-white'
-                : 'bg-neutral-100 text-neutral-300 hover:bg-neutral-50'
-            }`}
-          >
-            {status === 'all' ? 'All' : statusConfig[status].label}
-            {status !== 'all' && (
-              <span className="ml-1">({transactions.filter(tx => tx.status === status).length})</span>
-            )}
-          </button>
-        ))}
+        {(['all', 'pending', 'processing', 'success', 'error'] as const).map((status) => {
+          const count = status === 'all' 
+            ? transactions.length 
+            : (transactionCounts?.[status] || transactions.filter(tx => tx.status === status).length);
+          
+          return (
+            <button
+              key={status}
+              onClick={() => setFilter(status)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                filter === status
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-neutral-100 text-neutral-300 hover:bg-neutral-50'
+              }`}
+            >
+              {status === 'all' ? 'All' : statusConfig[status].label}
+              <span className="ml-1">({count})</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Transaction List */}
@@ -186,9 +196,9 @@ export default function TransactionTracker({ transactions, onClearAll }: Transac
           <div className="flex items-center justify-between text-xs text-neutral-300">
             <span>Total: {filteredTransactions.length} transactions</span>
             <span>
-              Success: {transactions.filter(tx => tx.status === 'success').length} • 
-              Processing: {transactions.filter(tx => tx.status === 'processing').length} • 
-              Error: {transactions.filter(tx => tx.status === 'error').length}
+              Success: {transactionCounts?.success || transactions.filter(tx => tx.status === 'success').length} • 
+              Processing: {transactionCounts?.processing || transactions.filter(tx => tx.status === 'processing').length} • 
+              Error: {transactionCounts?.error || transactions.filter(tx => tx.status === 'error').length}
             </span>
           </div>
         </div>
