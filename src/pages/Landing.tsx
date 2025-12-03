@@ -52,17 +52,17 @@ export default function Landing() {
     {
       icon: Lock,
       title: 'Privacy-First DeFi',
-      description: 'Complete transaction anonymity with zero-knowledge proofs'
+      description: 'Complete transactional anonymity secured by zero-knowledge cryptography — ensuring your activity stays yours, and yours alone.'
     },
     {
       icon: Bot,
       title: 'AI-Powered Agents',
-      description: 'ERC-8004 compliant agents for automated yield optimization'
+      description: 'ERC-8004-compliant autonomous agents that optimize yield, react to market conditions, and execute strategies without exposing your identity.'
     },
     {
       icon: Shield,
       title: 'zkMechanism',
-      description: 'Advanced cryptography for secure privacy preservation'
+      description: 'Advanced cryptographic proofs enabling identity-free authentication, private execution, and end-to-end privacy across every interaction.'
     }
   ];
 
@@ -161,7 +161,7 @@ export default function Landing() {
                     THE VISION
                   </h1>
                   <p className="text-base lg:text-lg text-white/80 mb-6">
-                    Privacy-first DeFi powered by AI agents
+                    Enigma Protocol is the next-generation DeFi platform powered by AI agents and zero-knowledge privacy built for users who want automation, intelligence, and complete anonymity.
                   </p>
                   <div className="coordinate-label text-white/30 text-xs">X:1 Y:1</div>
                 </motion.div>
