@@ -24,14 +24,22 @@ interface TransactionTrackerProps {
     success: number;
     error: number;
   };
+  onFilterChange?: (filter: 'all' | TransactionStatus) => void;
 }
 
-export default function TransactionTracker({ transactions, onClearAll, transactionCounts }: TransactionTrackerProps) {
+export default function TransactionTracker({ transactions, onClearAll, transactionCounts, onFilterChange }: TransactionTrackerProps) {
   const [filter, setFilter] = useState<'all' | TransactionStatus>('all');
 
   const filteredTransactions = filter === 'all' 
     ? transactions 
     : transactions.filter(tx => tx.status === filter);
+
+  const handleFilterChange = (newFilter: 'all' | TransactionStatus) => {
+    setFilter(newFilter);
+    if (onFilterChange) {
+      onFilterChange(newFilter);
+    }
+  };
 
   const statusConfig = {
     pending: {
@@ -91,7 +99,7 @@ export default function TransactionTracker({ transactions, onClearAll, transacti
           return (
             <button
               key={status}
-              onClick={() => setFilter(status)}
+              onClick={() => handleFilterChange(status)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filter === status
                   ? 'bg-primary-500 text-white'

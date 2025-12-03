@@ -20,6 +20,7 @@ export default function Pools() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<'all' | Transaction['status']>('all');
   const [poolData, setPoolData] = useState({
     poolSize: 52000000,
     activeMixers: 2345,
@@ -554,8 +555,13 @@ export default function Pools() {
           <div className="mb-8">
             <TransactionTracker 
               transactions={transactions}
-              onClearAll={() => setTransactions([])}
+              onClearAll={() => {
+                setTransactions([]);
+                setUserTransactions([]);
+                setTransactionCounts({ pending: 0, processing: 0, success: 0, error: 0 });
+              }}
               transactionCounts={transactionCounts}
+              onFilterChange={setActiveFilter}
             />
           </div>
 
