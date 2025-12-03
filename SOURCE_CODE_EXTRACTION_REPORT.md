@@ -10,7 +10,7 @@
 
 #### **1. Source Code Lengkap**
 ```
-masquerade-privacy-defi/
+Enigma-Protocol/
 ├── src/
 │   ├── components/          # React components
 │   ├── pages/              # Halaman utama

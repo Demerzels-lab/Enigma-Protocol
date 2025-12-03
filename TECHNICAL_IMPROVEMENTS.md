@@ -1,4 +1,4 @@
-# Masquerade Privacy DeFi Platform - Technical Improvements Documentation
+# Enigma Protocol Privacy DeFi Platform - Technical Improvements Documentation
 
 ## 🚀 Deployment
 **Production URL**: https://c0u3xv5fl6el.space.minimax.io

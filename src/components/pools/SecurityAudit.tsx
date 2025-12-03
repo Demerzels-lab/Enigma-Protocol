@@ -230,10 +230,10 @@ export default function SecurityAudit() {
               Temukan bug kritis? Laporkan langsung ke tim security kami melalui email:
             </p>
             <a
-              href="mailto:security@masquerade.io"
+              href="mailto:security@enigma-protocol.io"
               className="text-sm font-semibold text-primary-500 hover:text-primary-700"
             >
-              security@masquerade.io
+              security@enigma-protocol.io
             </a>
           </div>
         </div>

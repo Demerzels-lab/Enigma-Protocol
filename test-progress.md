@@ -1,4 +1,4 @@
-# Masquerade Privacy DeFi Platform - Testing Progress
+# Enigma Protocol Privacy DeFi Platform - Testing Progress
 
 ## Test Plan
 **Website Type**: MPA (Multi-Page Application)

@@ -56,7 +56,7 @@ export default function DeFi() {
     try {
       // In production, this will interact with smart contracts
       // For demo, we simulate with message signing
-      const message = `Supply ${supplyAmount} ETH to Masquerade Privacy Lending Pool\nTimestamp: ${Date.now()}`;
+      const message = `Supply ${supplyAmount} ETH to Enigma Protocol Privacy Lending Pool\nTimestamp: ${Date.now()}`;
       
       const signature = await signer.signMessage(message);
       
@@ -99,7 +99,7 @@ export default function DeFi() {
     setTxStatus('pending');
 
     try {
-      const message = `Borrow ${borrowAmount} ETH from Masquerade Privacy Lending Pool\nTimestamp: ${Date.now()}`;
+      const message = `Borrow ${borrowAmount} ETH from Enigma Protocol Privacy Lending Pool\nTimestamp: ${Date.now()}`;
       
       const signature = await signer.signMessage(message);
       const mockTxHash = ethers.keccak256(ethers.toUtf8Bytes(signature));

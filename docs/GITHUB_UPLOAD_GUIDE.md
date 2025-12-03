@@ -20,7 +20,7 @@
 
 ### 📁 File Structure Summary
 ```
-masquerade-privacy-defi/           # ← Main project folder
+Enigma-Protocol/           # ← Main project folder
 ├── src/                           # Source code
 │   ├── components/               # React components
 │   ├── pages/                    # Page components
@@ -58,7 +58,7 @@ gh repo create enigma-privacy-defi --public --description "Privacy DeFi platform
 ### 2. Initialize Local Repository
 
 ```bash
-cd masquerade-privacy-defi
+cd Enigma-Protocol
 git init
 git add .
 git commit -m "Initial commit: Enigma Protocol Privacy DeFi Platform

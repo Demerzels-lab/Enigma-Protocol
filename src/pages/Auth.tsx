@@ -32,7 +32,7 @@ export default function Auth() {
     try {
       // Step 1: Generate message untuk signature (ini akan menjadi commitment)
       const timestamp = Date.now();
-      const message = `Masquerade Privacy DeFi Authentication\nAddress: ${account}\nTimestamp: ${timestamp}`;
+      const message = `Enigma Protocol Authentication\nAddress: ${account}\nTimestamp: ${timestamp}`;
       
       // Step 2: Sign message dengan wallet (ini menggantikan ZK proof generation)
       // Dalam production, ini akan diganti dengan actual ZK proof generation
@@ -62,7 +62,7 @@ export default function Auth() {
         setVerified(true);
         
         // Store user session
-        localStorage.setItem('masquerade_user', JSON.stringify({
+        localStorage.setItem('enigma_user', JSON.stringify({
           ...data.data.user,
           walletAddress: account
         }));

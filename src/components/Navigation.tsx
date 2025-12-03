@@ -35,9 +35,9 @@ export default function Navigation() {
         <div className="flex items-center justify-between h-20">
           <Link to="/" className="flex items-center space-x-3 group">
             <div className="relative">
-              <img src="/logo.jpeg" alt="Masquerade Logo" className="w-8 h-8 md:w-24 md:h-24 rounded transition-all duration-normal group-hover:glow-purple" />
+              <img src="/logo.jpeg" alt="Enigma Protocol Logo" className="w-8 h-8 md:w-24 md:h-24 rounded transition-all duration-normal group-hover:glow-purple" />
               <div className="absolute inset-0 blur-lg opacity-30 group-hover:opacity-50 transition-opacity">
-                <img src="/logo.jpeg" alt="Masquerade Logo" className="w-8 h-8 rounded" />
+                <img src="/logo.jpeg" alt="Enigma Protocol Logo" className="w-8 h-8 rounded" />
               </div>
             </div>
           </Link>
@@ -66,7 +66,7 @@ export default function Navigation() {
             {/* Social Media Icons - Always show */}
             <div className="flex items-center space-x-3">
               <a
-                href="https://github.com/Demerzels-lab/masquerade-privacy-defi"
+                href="https://github.com/Demerzels-lab/Enigma-Protocol"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 text-neutral-300 hover:text-accent-500 transition-all duration-fast hover:terminal-border hover:bg-neutral-100/50 rounded-md"
@@ -75,7 +75,7 @@ export default function Navigation() {
                 <Github className="w-5 h-5" />
               </a>
               <a
-                href="https://x.com/masqueradedefi"
+                href="https://x.com/EnigmaProtocol"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 text-neutral-300 hover:text-accent-500 transition-all duration-fast hover:terminal-border hover:bg-neutral-100/50 rounded-md"
@@ -168,7 +168,7 @@ export default function Navigation() {
             <div className="px-4 py-3 border-t terminal-border mt-4 pt-4">
               <div className="flex items-center justify-center space-x-6">
                 <a
-                  href="https://github.com/Demerzels-lab/masquerade-privacy-defi"
+                  href="https://github.com/Demerzels-lab/Enigma-Protocol"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-3 text-neutral-300 hover:text-accent-500 transition-all duration-fast hover:terminal-border hover:bg-neutral-100/50 rounded-md"
@@ -178,7 +178,7 @@ export default function Navigation() {
                   <Github className="w-6 h-6" />
                 </a>
                 <a
-                  href="https://x.com/masqueradedefi"
+                  href="https://x.com/EnigmaProtocol"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-3 text-neutral-300 hover:text-accent-500 transition-all duration-fast hover:terminal-border hover:bg-neutral-100/50 rounded-md"

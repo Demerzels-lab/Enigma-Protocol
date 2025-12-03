@@ -305,7 +305,7 @@ User dapat execute salah satu dari 3 metode untuk update database:
 
 ## REPOSITORY
 
-**GitHub**: https://github.com/Demerzels-lab/masquerade-privacy-defi
+**GitHub**: https://github.com/Demerzels-lab/Enigma-Protocol
 
 **Latest Commits**:
 1. Initial improvements (action buttons, pricing, APY fix)
