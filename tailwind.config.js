@@ -26,22 +26,24 @@ module.exports = {
 		extend: {
 			colors: {
 				primary: {
-					50: '#EFF6FF',
-					100: '#DBEAFE',
-					500: '#6366F1',
-					700: '#4338CA',
-					900: '#312E81',
+					50: '#F0FDFA',
+					100: '#CCFBF1',
+					500: '#14B8A6',
+					700: '#0F766E',
+					900: '#134E4A',
 				},
+				// NEW TEAL ACCENT PALETTE MATCHING THE LOGO
 				accent: {
-					400: '#A855F7',
-					500: '#8B5CF6',
-					600: '#7C3AED',
+					400: '#5FFAD0', // Highlight glow
+					500: '#00E0D0', // Base Brand Color
+					600: '#00B3A6', // Darker shade
+                    900: '#00423D', // Deep background accent
 				},
 				neutral: {
 					0: '#000000',
-					50: '#0A0A0A',
-					100: '#141414',
-					200: '#1F1F1F',
+					50: '#040F0D', // Slight teal tint to black
+					100: '#0A1412',
+					200: '#162120',
 					300: '#A3A3A3',
 					400: '#525252',
 				},
@@ -55,14 +57,12 @@ module.exports = {
 					info: '#06B6D4',
 				},
 				background: {
-					page: '#000000',
-					surface: '#0A0A0A',
+					page: '#000202', // Almost black teal
+					surface: '#050A0A',
 				},
 			},
 			fontFamily: {
-				// Add "display" for headings
 				display: ['"Space Grotesk"', 'sans-serif'],
-				// Keep "body" for paragraphs
 				body: ['"Inter"', 'sans-serif'],
 			},
 			fontSize: {
@@ -97,13 +97,14 @@ module.exports = {
 				'2xl': '24px',
 				full: '9999px',
 			},
+			// UPDATED SHADOWS TO USE TEAL RGB (0, 224, 208)
 			boxShadow: {
-				card: '0 0 1px rgba(139, 92, 246, 0.5), 0 4px 12px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(139, 92, 246, 0.05)',
-				'card-hover': '0 0 2px rgba(139, 92, 246, 0.8), 0 8px 24px rgba(0, 0, 0, 0.9), inset 0 0 30px rgba(139, 92, 246, 0.1)',
-				glow: '0 0 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(139, 92, 246, 0.2)',
-				'glow-strong': '0 0 30px rgba(139, 92, 246, 0.8), 0 0 60px rgba(139, 92, 246, 0.4)',
-				modal: '0 20px 60px rgba(0, 0, 0, 0.95), 0 0 80px rgba(139, 92, 246, 0.3)',
-				terminal: '0 0 1px rgba(139, 92, 246, 0.6), inset 0 0 20px rgba(139, 92, 246, 0.08)',
+				card: '0 0 1px rgba(0, 224, 208, 0.5), 0 4px 12px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 224, 208, 0.05)',
+				'card-hover': '0 0 2px rgba(0, 224, 208, 0.8), 0 8px 24px rgba(0, 0, 0, 0.9), inset 0 0 30px rgba(0, 224, 208, 0.15)',
+				glow: '0 0 20px rgba(0, 224, 208, 0.5), 0 0 40px rgba(0, 224, 208, 0.2)',
+				'glow-strong': '0 0 30px rgba(0, 224, 208, 0.8), 0 0 60px rgba(0, 224, 208, 0.4)',
+				modal: '0 20px 60px rgba(0, 0, 0, 0.95), 0 0 80px rgba(0, 224, 208, 0.2)',
+				terminal: '0 0 1px rgba(0, 224, 208, 0.6), inset 0 0 20px rgba(0, 224, 208, 0.08)',
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
