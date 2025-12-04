@@ -1,130 +1,94 @@
-import { useEffect, useState } from 'react';
-import { TrendingUp, Activity, Bot, Shield, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { supabase } from '../lib/supabase';
-import { getUserAgents, getUserPortfolio, getRecentTransactions } from '../lib/api';
+import { useEffect, useState, useRef } from 'react';
+import { TrendingUp, Activity, Bot, Shield, ArrowUpRight, ArrowDownRight, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useWallet } from '../contexts/WalletContext';
-
-interface Agent {
-  id: string;
-  name: string;
-  agent_type: string;
-  reputation_score: number;
-  performance_metrics: {
-    averageApy: number;
-    successRate: number;
-  };
-}
-
-interface Transaction {
-  id: string;
-  tx_type: string;
-  amount: number;
-  privacy_level: string;
-  status: string;
-  created_at: string;
-}
+import { generateMockAgents, generateMockTransactions, Transaction, Agent } from '../lib/mockData';
 
 export default function Dashboard() {
   const { account } = useWallet();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [portfolio, setPortfolio] = useState({
-    totalValue: 125000,
-    apy: 38.5,
-    activeAgents: 3,
-    privacyStatus: 'anonymous'
+    totalValue: 0,
+    apy: 0,
+    activeAgents: 0,
+    privacyStatus: 'Protected'
   });
   const [isLoading, setIsLoading] = useState(true);
 
+  // --- 1. Initial Data Load ---
   useEffect(() => {
     loadDashboardData();
   }, [account]);
 
   const loadDashboardData = async () => {
     setIsLoading(true);
-    try {
-      await Promise.all([
-        loadAgents(),
-        loadTransactions(),
-        loadPortfolio()
-      ]);
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadPortfolio = async () => {
-    if (account) {
-      try {
-        const portfolioData = await getUserPortfolio(account);
-        if (portfolioData) {
-          // Calculate APY from active agents
-          const activeAgentsData = await getUserAgents(account);
-          let totalApy = 0;
-          if (activeAgentsData && activeAgentsData.length > 0) {
-            totalApy = activeAgentsData.reduce((sum: number, ua: any) => {
-              return sum + (ua.ai_agents?.performance_metrics?.averageApy || 0);
-            }, 0) / activeAgentsData.length;
-          }
-          
-          setPortfolio({
-            totalValue: portfolioData.total_value || 125000,
-            apy: totalApy || 38.5,
-            activeAgents: activeAgentsData?.length || 0,
-            privacyStatus: portfolioData.privacy_status || 'anonymous'
-          });
-        }
-      } catch (error) {
-        console.error('Failed to load portfolio:', error);
-      }
-    }
-  };
-
-  const loadAgents = async () => {
-    const { data } = await supabase
-      .from('ai_agents')
-      .select('*')
-      .eq('active', true)
-      .limit(3);
     
-    if (data) setAgents(data);
+    setTimeout(() => {
+      const allAgents = generateMockAgents();
+      const activeAgents = allAgents.filter(a => a.status === 'active').slice(0, 3);
+      setAgents(activeAgents);
+
+      // Initial batch of transactions
+      const mockTxs = generateMockTransactions(8);
+      setTransactions(mockTxs);
+
+      const avgApy = activeAgents.reduce((acc, curr) => acc + curr.performance_metrics.averageApy, 0) / activeAgents.length;
+
+      setPortfolio({
+        totalValue: 12450.80, 
+        apy: parseFloat(avgApy.toFixed(2)),
+        activeAgents: activeAgents.length,
+        privacyStatus: 'Maximum'
+      });
+
+      setIsLoading(false);
+    }, 1200);
   };
 
-  const loadTransactions = async () => {
-    try {
-      const data = await getRecentTransactions(5);
-      if (data) {
-        // Transform data to match Transaction interface
-        const formattedTransactions = data.map((tx: any) => ({
-          id: tx.id,
-          tx_type: tx.tx_type || tx.type || 'unknown',
-          amount: tx.amount || 0,
-          privacy_level: tx.privacy_level || 'anonymous',
-          status: tx.status || 'pending',
-          created_at: tx.created_at
-        }));
-        setTransactions(formattedTransactions);
+  // --- 2. Live Data Simulation Effects ---
+  
+  // Effect: Randomly add new transactions every few seconds
+  useEffect(() => {
+    if (isLoading) return;
+
+    const txInterval = setInterval(() => {
+      // 30% chance to add a new transaction to make it feel organic (not robotic)
+      if (Math.random() > 0.7) {
+        const newTx = generateMockTransactions(1)[0];
+        // Set timestamp to "now"
+        newTx.timestamp = new Date();
+        
+        setTransactions(prev => {
+          const updated = [newTx, ...prev];
+          return updated.slice(0, 10); // Keep only last 10
+        });
       }
-    } catch (error) {
-      console.error('Failed to load transactions:', error);
-      // Fallback to direct supabase query
-      const { data } = await supabase
-        .from('transactions')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
-      
-      if (data) setTransactions(data);
-    }
-  };
+    }, 2000); // Check every 2 seconds
+
+    return () => clearInterval(txInterval);
+  }, [isLoading]);
+
+  // Effect: Fluctuate Portfolio Value (Market Ticker)
+  useEffect(() => {
+    if (isLoading) return;
+
+    const priceInterval = setInterval(() => {
+      setPortfolio(prev => ({
+        ...prev,
+        // Fluctuate value by -0.5% to +0.5%
+        totalValue: prev.totalValue * (1 + (Math.random() * 0.01 - 0.005))
+      }));
+    }, 3000);
+
+    return () => clearInterval(priceInterval);
+  }, [isLoading]);
+
 
   const portfolioMetrics = [
     {
       label: 'Total Portfolio Value',
-      value: `$${portfolio.totalValue.toLocaleString()}`,
+      value: `$${portfolio.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       change: '+12.5%',
       positive: true,
       icon: TrendingUp
@@ -132,21 +96,30 @@ export default function Dashboard() {
     {
       label: 'Average APY',
       value: `${portfolio.apy}%`,
-      change: '+5.2%',
+      change: '+2.4%',
       positive: true,
       icon: Activity
     },
     {
       label: 'Active AI Agents',
       value: portfolio.activeAgents.toString(),
-      change: 'All Running',
+      change: 'All Systems Operational',
       positive: true,
       icon: Bot
     },
   ];
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'success': return <CheckCircle className="w-4 h-4 text-semantic-success" />;
+      case 'processing': return <Loader2 className="w-4 h-4 text-accent-500 animate-spin" />;
+      case 'error': return <XCircle className="w-4 h-4 text-semantic-error" />;
+      default: return <Clock className="w-4 h-4 text-neutral-400" />;
+    }
+  };
+
   return (
-    <div className="min-h-screen text-text-primary pt-24 pb-12 px-6">
+    <div className="min-h-screen text-text-primary pt-28 pb-12 px-6 bg-[#000202] font-body">
       <div className="container mx-auto max-w-7xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -154,14 +127,16 @@ export default function Dashboard() {
           transition={{ duration: 0.6 }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
             <div>
-              <h1 className="text-4xl font-bold mb-2">Portfolio Dashboard</h1>
-              <p className="text-neutral-300">Anonymous portfolio tracking with privacy preservation</p>
+              <h1 className="text-4xl font-display font-bold mb-2 text-white">Command Center</h1>
+              <p className="text-neutral-400 font-mono text-sm">
+                Welcome back, <span className="text-accent-500">{account ? `${account.slice(0,6)}...${account.slice(-4)}` : 'GHOST_USER'}</span>
+              </p>
             </div>
-            <div className="flex items-center space-x-2 px-4 py-2 bg-neutral-50 rounded-lg border border-semantic-success/20">
-              <Shield className="w-4 h-4 text-semantic-success animate-pulse-glow" />
-              <span className="text-sm text-semantic-success font-medium">Fully Protected</span>
+            <div className="flex items-center space-x-2 px-4 py-2 bg-[#050A0A] rounded border border-accent-500/30 shadow-[0_0_15px_rgba(0,224,208,0.1)]">
+              <Shield className="w-4 h-4 text-accent-500 animate-pulse" />
+              <span className="text-xs font-mono text-accent-500 font-medium tracking-wider uppercase">Privacy: {portfolio.privacyStatus}</span>
             </div>
           </div>
 
@@ -173,105 +148,158 @@ export default function Dashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="bg-neutral-50 rounded-2xl p-6 border border-neutral-400/20 hover:border-primary-500/40 transition-all duration-normal hover:shadow-card-hover"
+                className="bg-[#030505] p-6 border border-neutral-800 hover:border-accent-500/30 transition-all duration-300 group relative overflow-hidden"
               >
-                <div className="flex items-center justify-between mb-4">
-                  <metric.icon className="w-8 h-8 text-primary-500" />
-                  <div className={`flex items-center space-x-1 text-sm font-medium ${metric.positive ? 'text-semantic-success' : 'text-semantic-error'}`}>
-                    {metric.positive ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <metric.icon className="w-16 h-16 text-accent-500" />
+                </div>
+                <div className="flex items-center justify-between mb-4 relative z-10">
+                  <div className="p-2 bg-accent-500/10 rounded-sm border border-accent-500/20">
+                    <metric.icon className="w-6 h-6 text-accent-500" />
+                  </div>
+                  <div className={`flex items-center space-x-1 text-xs font-mono ${metric.positive ? 'text-semantic-success' : 'text-semantic-error'}`}>
+                    {metric.positive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                     <span>{metric.change}</span>
                   </div>
                 </div>
-                <div className="text-3xl font-bold mb-1">{metric.value}</div>
-                <div className="text-sm text-neutral-300">{metric.label}</div>
+                <div className="relative z-10">
+                  <div className="text-3xl font-display font-bold text-white mb-1 tracking-tight tabular-nums">
+                    {isLoading ? <div className="h-8 w-24 bg-neutral-800 animate-pulse rounded" /> : metric.value}
+                  </div>
+                  <div className="text-xs text-neutral-500 font-mono uppercase tracking-wider">{metric.label}</div>
+                </div>
               </motion.div>
             ))}
           </div>
 
-          {/* Active AI Agents */}
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold mb-6">Active AI Agents</h2>
-            <div className="grid md:grid-cols-3 gap-6">
-              {agents.map((agent) => (
-                <div
-                  key={agent.id}
-                  className="bg-neutral-50 rounded-xl p-6 border border-neutral-400/20 hover:border-accent-500/40 transition-all duration-normal"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 bg-accent-500/10 rounded-lg flex items-center justify-center">
-                      <Bot className="w-5 h-5 text-accent-500" />
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Active AI Agents Column */}
+            <div className="lg:col-span-1">
+              <h2 className="text-xl font-display font-bold mb-6 flex items-center gap-2 text-white">
+                <Bot className="w-5 h-5 text-accent-500" /> Active Agents
+              </h2>
+              <div className="space-y-4">
+                {isLoading ? (
+                  [1, 2, 3].map(i => <div key={i} className="h-24 bg-[#030505] border border-neutral-800 animate-pulse" />)
+                ) : (
+                  agents.map((agent) => (
+                    <div
+                      key={agent.id}
+                      className="bg-[#030505] p-5 border border-neutral-800 hover:border-accent-500/40 transition-colors group"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <h3 className="font-bold text-white group-hover:text-accent-400 transition-colors">{agent.name}</h3>
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-accent-500/10 rounded text-[10px] font-mono text-accent-500 uppercase">
+                          <span className="w-1.5 h-1.5 bg-accent-500 rounded-full animate-pulse" />
+                          Active
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <div className="text-neutral-400 text-xs font-mono">
+                          APY: <span className="text-white">{agent.performance_metrics.averageApy}%</span>
+                        </div>
+                        <div className="text-neutral-400 text-xs font-mono">
+                          SR: <span className="text-accent-500">{agent.performance_metrics.successRate}%</span>
+                        </div>
+                      </div>
+                      <div className="mt-3 w-full h-1 bg-neutral-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-accent-500/50 w-3/4 animate-pulse" />
+                      </div>
                     </div>
-                    <div className="px-2 py-1 bg-semantic-success/20 text-semantic-success rounded text-xs font-semibold">
-                      Active
-                    </div>
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">{agent.name}</h3>
-                  <p className="text-sm text-neutral-300 mb-4 capitalize">{agent.agent_type.replace('_', ' ')}</p>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-neutral-300">APY:</span>
-                    <span className="text-semantic-success font-semibold">{agent.performance_metrics.averageApy}%</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm mt-2">
-                    <span className="text-neutral-300">Success Rate:</span>
-                    <span className="text-primary-500 font-semibold">{agent.performance_metrics.successRate}%</span>
-                  </div>
-                </div>
-              ))}
+                  ))
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Transaction History */}
-          <div>
-            <h2 className="text-2xl font-bold mb-6">Recent Transactions</h2>
-            <div className="bg-neutral-50 rounded-2xl border border-neutral-400/20 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-neutral-400/20">
-                      <th className="text-left p-4 text-sm font-semibold text-neutral-300">Type</th>
-                      <th className="text-left p-4 text-sm font-semibold text-neutral-300">Amount</th>
-                      <th className="text-left p-4 text-sm font-semibold text-neutral-300">Privacy Level</th>
-                      <th className="text-left p-4 text-sm font-semibold text-neutral-300">Status</th>
-                      <th className="text-left p-4 text-sm font-semibold text-neutral-300">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {transactions.length > 0 ? (
-                      transactions.map((tx) => (
-                        <tr key={tx.id} className="border-b border-neutral-400/10 hover:bg-neutral-100/50">
-                          <td className="p-4 text-sm capitalize">{tx.tx_type.replace('_', ' ')}</td>
-                          <td className="p-4 text-sm font-mono">${tx.amount.toFixed(2)}</td>
-                          <td className="p-4 text-sm">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              tx.privacy_level === 'anonymous' ? 'bg-semantic-success/20 text-semantic-success' :
-                              tx.privacy_level === 'mixed' ? 'bg-semantic-warning/20 text-semantic-warning' :
-                              'bg-semantic-error/20 text-semantic-error'
-                            }`}>
-                              {tx.privacy_level}
-                            </span>
-                          </td>
-                          <td className="p-4 text-sm">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              tx.status === 'completed' ? 'bg-semantic-success/20 text-semantic-success' :
-                              'bg-semantic-warning/20 text-semantic-warning'
-                            }`}>
-                              {tx.status}
-                            </span>
-                          </td>
-                          <td className="p-4 text-sm text-neutral-300">
-                            {new Date(tx.created_at).toLocaleDateString()}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
+            {/* Recent Transactions Column - LIVE FEED */}
+            <div className="lg:col-span-2">
+              <div className="flex justify-between items-end mb-6">
+                <h2 className="text-xl font-display font-bold flex items-center gap-2 text-white">
+                  <Activity className="w-5 h-5 text-accent-500" /> Live Feed
+                </h2>
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-accent-500 rounded-full animate-ping" />
+                  <span className="text-[10px] font-mono text-accent-500 tracking-widest uppercase">RECEIVING_DATA</span>
+                </div>
+              </div>
+              
+              <div className="bg-[#030505] border border-neutral-800 overflow-hidden relative">
+                {/* Scanline decoration */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent-500/50 to-transparent opacity-20" />
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead className="bg-[#050A0A] border-b border-neutral-800">
                       <tr>
-                        <td colSpan={5} className="p-8 text-center text-neutral-300">
-                          No transactions yet. Start trading to see your history.
-                        </td>
+                        <th className="p-4 text-[10px] font-mono uppercase tracking-widest text-neutral-500">Status</th>
+                        <th className="p-4 text-[10px] font-mono uppercase tracking-widest text-neutral-500">Type</th>
+                        <th className="p-4 text-[10px] font-mono uppercase tracking-widest text-neutral-500">Amount</th>
+                        <th className="p-4 text-[10px] font-mono uppercase tracking-widest text-neutral-500">Privacy</th>
+                        <th className="p-4 text-[10px] font-mono uppercase tracking-widest text-neutral-500 text-right">Time</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    {/* Animated Table Body */}
+                    <tbody className="divide-y divide-neutral-800">
+                      <AnimatePresence initial={false} mode='popLayout'>
+                        {isLoading ? (
+                          [1, 2, 3, 4, 5].map(i => (
+                            <tr key={i}>
+                              <td colSpan={5} className="p-4"><div className="h-4 bg-neutral-800/50 animate-pulse rounded" /></td>
+                            </tr>
+                          ))
+                        ) : transactions.length > 0 ? (
+                          transactions.map((tx) => (
+                            <motion.tr
+                              layout
+                              initial={{ opacity: 0, x: -20, backgroundColor: "rgba(0, 224, 208, 0.1)" }}
+                              animate={{ opacity: 1, x: 0, backgroundColor: "transparent" }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.4 }}
+                              key={tx.id}
+                              className="hover:bg-white/[0.02] transition-colors group relative"
+                            >
+                              <td className="p-4">
+                                <div className="flex items-center gap-2">
+                                  {getStatusIcon(tx.status)}
+                                  <span className={`text-xs font-mono uppercase ${tx.status === 'success' ? 'text-semantic-success' : 'text-neutral-400'}`}>
+                                    {tx.status}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <span className="text-sm font-medium text-white capitalize">{tx.type.replace('_', ' ')}</span>
+                                <div className="text-[10px] font-mono text-neutral-500">{tx.txHash.slice(0, 12)}...</div>
+                              </td>
+                              <td className="p-4">
+                                <span className="text-sm font-mono text-accent-400">{tx.amount} {tx.token}</span>
+                              </td>
+                              <td className="p-4">
+                                <span className={`px-2 py-1 text-[10px] uppercase font-mono rounded border ${
+                                  tx.privacyLevel === 'maximum' 
+                                    ? 'border-accent-500/30 text-accent-500 bg-accent-500/5' 
+                                    : 'border-neutral-700 text-neutral-400'
+                                }`}>
+                                  {tx.privacyLevel}
+                                </span>
+                              </td>
+                              <td className="p-4 text-right">
+                                <span className="text-xs text-neutral-500 font-mono">
+                                  {tx.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}
+                                </span>
+                              </td>
+                            </motion.tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={5} className="p-8 text-center text-neutral-500 font-mono">
+                              // NO_DATA_FOUND
+                            </td>
+                          </tr>
+                        )}
+                      </AnimatePresence>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>

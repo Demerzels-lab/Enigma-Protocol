@@ -26,7 +26,6 @@ function App() {
     <WalletProvider>
       <Router>
         <div className="min-h-screen"> 
-          <TerminalGridBackground /> 
           <Navigation />
           <Routes>
             {/* Public Routes */}

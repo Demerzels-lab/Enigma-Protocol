@@ -1,31 +1,20 @@
 import { useEffect, useState } from 'react';
-import { Bot, Search, Filter, X, Shield, TrendingUp } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { supabase } from '../lib/supabase';
-import { activateAgent } from '../lib/api';
+import { Bot, Search, Filter, X, Shield, Terminal, Cpu, CheckCircle2, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useWallet } from '../contexts/WalletContext';
+import { generateMockAgents, Agent } from '../lib/mockData';
 import AgentCard from '../components/marketplace/AgentCard';
 import CapabilitiesDisplay from '../components/marketplace/CapabilitiesDisplay';
 import AgentActivationModal from '../components/marketplace/AgentActivationModal';
 
-interface Agent {
+// --- Types for Logs ---
+interface AgentLog {
   id: string;
-  name: string;
-  description: string;
-  agent_type: string;
-  capabilities: any;
-  reputation_score: number;
-  performance_metrics: {
-    totalExecutions: number;
-    successRate: number;
-    averageApy: number;
-  };
-  zk_proof_commitment: string;
-  trust_model: string;
-  pricing_model?: 'free' | 'subscription' | 'performance' | 'one_time';
-  cost_per_execution?: number;
-  subscription_fee?: number;
-  performance_fee_percentage?: number;
+  agentName: string;
+  action: string;
+  profit?: string;
+  timestamp: string;
+  type: 'info' | 'success' | 'warning';
 }
 
 export default function Marketplace() {
@@ -37,275 +26,223 @@ export default function Marketplace() {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [activatingAgent, setActivatingAgent] = useState<Agent | null>(null);
   const [showActivationModal, setShowActivationModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Live Logs State
+  const [logs, setLogs] = useState<AgentLog[]>([]);
 
   useEffect(() => {
-    loadAgents();
-  }, []);
-
-  useEffect(() => {
-    filterAgents();
-  }, [selectedType, searchQuery, agents]);
-
-  const loadAgents = async () => {
-    const { data } = await supabase
-      .from('ai_agents')
-      .select('*')
-      .eq('active', true)
-      .order('reputation_score', { ascending: false });
-    
-    if (data) {
+    // Initial Load
+    setTimeout(() => {
+      const data = generateMockAgents();
       setAgents(data);
       setFilteredAgents(data);
-    }
-  };
+      setIsLoading(false);
+    }, 800);
 
-  const filterAgents = () => {
+    // Live Log Generator
+    const logInterval = setInterval(() => {
+      const actions = [
+        { action: "Rebalancing Liquidity Pool", type: 'info' },
+        { action: "Harvested Yield", profit: "+$124.50", type: 'success' },
+        { action: "Executed Arbitrage Trade", profit: "+$42.10", type: 'success' },
+        { action: "Detected Slippage Spike", type: 'warning' },
+        { action: "Verifying ZK Proof", type: 'info' },
+        { action: "Scanning Mempool", type: 'info' }
+      ];
+      
+      if (Math.random() > 0.4) {
+        const randomAgent = agents[Math.floor(Math.random() * agents.length)] || { name: "System" };
+        const randomAction = actions[Math.floor(Math.random() * actions.length)];
+        
+        const newLog: AgentLog = {
+          id: Date.now().toString(),
+          agentName: randomAgent.name,
+          action: randomAction.action,
+          profit: randomAction.profit,
+          type: randomAction.type as any,
+          timestamp: new Date().toLocaleTimeString([], { hour12: false })
+        };
+        
+        setLogs(prev => [newLog, ...prev].slice(0, 6)); // Keep last 6 logs
+      }
+    }, 2000);
+
+    return () => clearInterval(logInterval);
+  }, [agents]); // Re-run if agents load
+
+  // Filtering Logic
+  useEffect(() => {
     let filtered = agents;
-
-    if (selectedType !== 'all') {
-      filtered = filtered.filter(agent => agent.agent_type === selectedType);
-    }
-
+    if (selectedType !== 'all') filtered = filtered.filter(agent => agent.agent_type === selectedType);
     if (searchQuery) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(agent =>
         agent.name.toLowerCase().includes(query) ||
-        agent.description.toLowerCase().includes(query) ||
-        agent.agent_type.toLowerCase().replace('_', ' ').includes(query)
+        agent.agent_type.toLowerCase().includes(query)
       );
     }
-
     setFilteredAgents(filtered);
-  };
+  }, [selectedType, searchQuery, agents]);
 
-  const handleViewDetails = (agent: Agent) => {
-    setSelectedAgent(agent);
-  };
-
-  const handleSelectAgent = (agent: Agent) => {
-    setActivatingAgent(agent);
-    setShowActivationModal(true);
-  };
-
-  const handleActivateAgent = async (agentId: string) => {
-    // Use wallet address or generate temporary ID for demo
-    const userWallet = account || `demo_${Date.now()}`;
-    
-    try {
-      // Call backend edge function to activate agent
-      const result = await activateAgent(userWallet, agentId);
-      
-      console.log('Agent activated successfully:', result);
-      
-      // Reload agents to reflect updated execution count
-      await loadAgents();
-    } catch (error) {
-      console.error('Activation error:', error);
-      throw error; // Re-throw to let modal handle the error
-    }
-  };
+  // Handlers
+  const handleViewDetails = (agent: Agent) => setSelectedAgent(agent);
+  const handleSelectAgent = (agent: Agent) => { setActivatingAgent(agent); setShowActivationModal(true); };
+  const handleActivateAgent = async (agentId: string) => { await new Promise(resolve => setTimeout(resolve, 2000)); };
 
   const agentTypes = [
-    { value: 'all', label: 'All Agents' },
-    { value: 'strategy', label: 'Strategy' },
-    { value: 'risk_management', label: 'Risk Management' },
-    { value: 'arbitrage', label: 'Arbitrage' },
-    { value: 'liquidity', label: 'Liquidity' },
-    { value: 'privacy', label: 'Privacy' },
+    { value: 'all', label: 'ALL SYSTEMS' },
+    { value: 'strategy', label: 'STRATEGY' },
+    { value: 'risk_management', label: 'RISK OPS' },
+    { value: 'arbitrage', label: 'ARBITRAGE' },
+    { value: 'liquidity', label: 'LIQUIDITY' },
+    { value: 'privacy', label: 'PRIVACY' },
   ];
 
-  // Determine if this agent generates yield
-  const isYieldAgent = (agentType: string) => !['privacy', 'risk_management'].includes(agentType);
-
   return (
-    <div className="min-h-screen text-text-primary pt-24 pb-12 px-6">
+    <div className="min-h-screen text-text-primary pt-28 pb-12 px-6 bg-[#000202]">
       <div className="container mx-auto max-w-7xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2">AI Agent Marketplace</h1>
-            <p className="text-neutral-300">Browse and select ERC-8004 verified AI agents for automated DeFi strategies</p>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          
+          <div className="mb-12 border-b border-neutral-800 pb-8 flex justify-between items-end">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-display font-bold mb-4 text-white">Agent Marketplace</h1>
+              <p className="text-neutral-400 text-lg">
+                Deploy autonomous ERC-8004 agents. <span className="text-accent-500 font-mono text-sm ml-2">// VERIFIED_EXECUTION</span>
+              </p>
+            </div>
           </div>
 
-          {/* Filters */}
-          <div className="mb-8 flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-300" />
-              <input
-                type="text"
-                placeholder="Search agents..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-400/20 rounded-lg text-text-primary placeholder-neutral-300 focus:outline-none focus:border-primary-500"
-              />
-            </div>
-            <div className="flex items-center space-x-2 overflow-x-auto">
-              <Filter className="w-5 h-5 text-neutral-300 flex-shrink-0" />
+          <div className="mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scrollbar">
               {agentTypes.map((type) => (
                 <button
                   key={type.value}
                   onClick={() => setSelectedType(type.value)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-fast ${
+                  className={`px-4 py-2 text-[10px] font-mono tracking-widest uppercase border transition-all duration-300 ${
                     selectedType === type.value
-                      ? 'bg-primary-500 text-white'
-                      : 'bg-neutral-50 text-neutral-300 hover:bg-neutral-100'
+                      ? 'bg-accent-500/10 border-accent-500 text-accent-400'
+                      : 'bg-[#050A0A] border-neutral-800 text-neutral-500 hover:border-neutral-600 hover:text-white'
                   }`}
                 >
                   {type.label}
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Agent Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredAgents.map((agent) => (
-              <motion.div
-      key={agent.id}
-      initial={{ opacity: 0, y: 20 }} // Start invisible and 20px down
-      whileInView={{ opacity: 1, y: 0 }} // Animate to visible and 0px
-      viewport={{ once: true }} // Only animate once
-      transition={{ duration: 0.5 }}
-    >
-              <AgentCard
-                key={agent.id}
-                agent={agent}
-                onViewDetails={handleViewDetails}
-                onSelectAgent={handleSelectAgent}
+            
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-500" />
+              <input
+                type="text"
+                placeholder="SEARCH_PROTOCOL..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-[#050A0A] border border-neutral-800 text-white placeholder-neutral-600 focus:outline-none focus:border-accent-500 font-mono text-xs transition-colors"
               />
-              </motion.div>
-            ))}
+            </div>
           </div>
 
-          {filteredAgents.length === 0 && (
-            <div className="text-center py-12">
-              <Bot className="w-16 h-16 text-neutral-300 mx-auto mb-4" />
-              <p className="text-neutral-300">No agents found matching your criteria</p>
+          {/* AGENTS GRID */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {isLoading ? (
+              [1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-96 bg-[#030505] border border-neutral-800 animate-pulse" />)
+            ) : (
+              filteredAgents.map((agent) => (
+                <AgentCard
+                  key={agent.id}
+                  agent={agent}
+                  onViewDetails={handleViewDetails}
+                  onSelectAgent={handleSelectAgent}
+                />
+              ))
+            )}
+          </div>
+
+          {/* LIVE AGENT OPERATIONS CONSOLE */}
+          <div className="border border-neutral-800 bg-[#050A0A] p-6 rounded-lg">
+            <div className="flex items-center justify-between mb-6 border-b border-neutral-800 pb-4">
+              <div className="flex items-center gap-3">
+                <Terminal className="w-5 h-5 text-accent-500" />
+                <h3 className="font-mono font-bold text-white uppercase tracking-wider">Live Agent Operations</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
+                <span className="text-[10px] font-mono text-green-500">SYSTEM_ONLINE</span>
+              </div>
             </div>
-          )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left: Logs */}
+              <div className="space-y-2 h-48 overflow-hidden relative">
+                 <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-[#050A0A] to-transparent z-10" />
+                 <AnimatePresence initial={false}>
+                   {logs.map((log) => (
+                     <motion.div
+                       key={log.id}
+                       initial={{ opacity: 0, x: -20, height: 0 }}
+                       animate={{ opacity: 1, x: 0, height: 'auto' }}
+                       exit={{ opacity: 0 }}
+                       className="flex items-center gap-4 text-xs font-mono border-l-2 border-transparent hover:border-accent-500 pl-2 py-1 transition-colors"
+                     >
+                       <span className="text-neutral-600 select-none">[{log.timestamp}]</span>
+                       <span className="text-accent-400 font-bold min-w-[140px]">{log.agentName}</span>
+                       <span className={`${
+                         log.type === 'success' ? 'text-green-400' : 
+                         log.type === 'warning' ? 'text-yellow-500' : 'text-neutral-400'
+                       }`}>
+                         {log.action}
+                       </span>
+                       {log.profit && <span className="ml-auto text-green-500 bg-green-500/10 px-1 rounded">{log.profit}</span>}
+                     </motion.div>
+                   ))}
+                 </AnimatePresence>
+              </div>
+
+              {/* Right: Network Status */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-black border border-neutral-800 p-4 flex flex-col justify-center items-center">
+                  <Cpu className="w-6 h-6 text-neutral-500 mb-2" />
+                  <span className="text-2xl font-display font-bold text-white">42ms</span>
+                  <span className="text-[10px] font-mono text-neutral-500 uppercase">Avg Execution Time</span>
+                </div>
+                <div className="bg-black border border-neutral-800 p-4 flex flex-col justify-center items-center">
+                  <CheckCircle2 className="w-6 h-6 text-accent-500 mb-2" />
+                  <span className="text-2xl font-display font-bold text-white">99.9%</span>
+                  <span className="text-[10px] font-mono text-neutral-500 uppercase">Uptime</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </motion.div>
       </div>
 
-      {/* Agent Detail Modal */}
+      {/* Detail Modal (Simplified for brevity, assumes existing components handle the layout) */}
       {selectedAgent && (
-        <div
-          className="fixed inset-0 bg-background-page/80 backdrop-blur-sm z-50 flex items-center justify-center p-6"
-          onClick={() => setSelectedAgent(null)}
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-            onClick={(e) => e.stopPropagation()}
-            className="bg-neutral-100 rounded-2xl p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-neutral-400/20 shadow-modal"
-          >
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <h2 className="text-3xl font-bold mb-2">{selectedAgent.name}</h2>
-                <p className="text-neutral-300">{selectedAgent.description}</p>
-              </div>
-              <button
-                onClick={() => setSelectedAgent(null)}
-                className="text-neutral-300 hover:text-text-primary transition-colors"
-                aria-label="Close modal"
-              >
-                <X className="w-6 h-6" />
-              </button>
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={() => setSelectedAgent(null)}>
+          <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()} className="bg-[#0A0A0A] border border-neutral-800 w-full max-w-2xl p-8 shadow-2xl relative">
+            <button onClick={() => setSelectedAgent(null)} className="absolute top-4 right-4 text-neutral-500 hover:text-white"><X /></button>
+            <h2 className="text-3xl font-display font-bold text-white mb-2">{selectedAgent.name}</h2>
+            <div className="flex gap-2 mb-6">
+              <span className="px-2 py-1 bg-accent-500/10 text-accent-500 text-[10px] font-mono uppercase rounded border border-accent-500/20">
+                {selectedAgent.agent_type.replace('_', ' ')}
+              </span>
             </div>
-
-            <div className="space-y-6">
-              {/* ZK Verification */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3 flex items-center">
-                  <Shield className="w-5 h-5 text-primary-500 mr-2" />
-                  ZK Verification
-                </h3>
-                <div className="p-4 bg-neutral-50 rounded-lg border border-primary-500/20">
-                  <p className="text-sm font-mono text-primary-500 break-all">{selectedAgent.zk_proof_commitment}</p>
-                </div>
-              </div>
-
-              {/* Performance Metrics */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3 flex items-center">
-                  <TrendingUp className="w-5 h-5 text-accent-500 mr-2" />
-                  Performance Metrics
-                </h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="p-4 bg-neutral-50 rounded-lg">
-                    <p className="text-sm text-neutral-300 mb-1">Success Rate</p>
-                    <p className="text-2xl font-bold text-semantic-success">
-                      {selectedAgent.performance_metrics.successRate.toFixed(1)}%
-                    </p>
-                  </div>
-                  <div className="p-4 bg-neutral-50 rounded-lg">
-                    <p className="text-sm text-neutral-300 mb-1">Avg APY</p>
-                    {isYieldAgent(selectedAgent.agent_type) ? (
-                      <p className="text-2xl font-bold text-primary-500">
-                        {selectedAgent.performance_metrics.averageApy.toFixed(1)}%
-                      </p>
-                    ) : (
-                      <div className="group relative">
-                        <p className="text-2xl font-bold text-neutral-300">N/A</p>
-                        <div className="invisible group-hover:visible absolute bottom-full left-0 mb-2 px-3 py-2 bg-neutral-200 text-xs text-text-primary rounded shadow-lg z-10 w-48">
-                          This agent focuses on {selectedAgent.agent_type === 'privacy' ? 'privacy protection' : 'risk management'}, not yield generation
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-4 bg-neutral-50 rounded-lg">
-                    <p className="text-sm text-neutral-300 mb-1">Executions</p>
-                    <p className="text-2xl font-bold">{selectedAgent.performance_metrics.totalExecutions}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Capabilities */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Capabilities</h3>
-                <CapabilitiesDisplay 
-                  capabilities={selectedAgent.capabilities} 
-                  agentType={selectedAgent.agent_type}
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex space-x-3 pt-2">
-                <button
-                  onClick={() => setSelectedAgent(null)}
-                  className="flex-1 px-6 py-4 bg-neutral-50 text-neutral-300 rounded-xl font-semibold hover:bg-neutral-200 hover:text-text-primary transition-all duration-fast"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={() => {
-                    handleSelectAgent(selectedAgent);
-                    setSelectedAgent(null);
-                  }}
-                  className="flex-1 px-6 py-4 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-700 transition-all duration-fast shadow-glow"
-                >
-                  Activate Agent
-                </button>
-              </div>
+            <p className="text-neutral-400 mb-8">{selectedAgent.description}</p>
+            <div className="grid grid-cols-3 gap-px bg-neutral-800 border border-neutral-800 mb-8">
+               <div className="bg-[#0C0C0C] p-4 text-center"><div className="text-xl font-bold text-white">{selectedAgent.performance_metrics.successRate}%</div><div className="text-[10px] text-neutral-500">SUCCESS</div></div>
+               <div className="bg-[#0C0C0C] p-4 text-center"><div className="text-xl font-bold text-white">{selectedAgent.performance_metrics.averageApy}%</div><div className="text-[10px] text-neutral-500">APY</div></div>
+               <div className="bg-[#0C0C0C] p-4 text-center"><div className="text-xl font-bold text-white">{selectedAgent.performance_metrics.totalExecutions}</div><div className="text-[10px] text-neutral-500">EXECS</div></div>
             </div>
+            <CapabilitiesDisplay capabilities={selectedAgent.capabilities} agentType={selectedAgent.agent_type} />
+            <button onClick={() => { handleSelectAgent(selectedAgent); setSelectedAgent(null); }} className="w-full mt-8 bg-accent-500 text-black py-4 font-bold font-mono uppercase hover:bg-accent-400 transition-colors">
+              Deploy Agent
+            </button>
           </motion.div>
         </div>
       )}
 
-      {/* Agent Activation Modal */}
-      <AgentActivationModal
-        agent={activatingAgent}
-        isOpen={showActivationModal}
-        onClose={() => {
-          setShowActivationModal(false);
-          setActivatingAgent(null);
-        }}
-        onActivate={handleActivateAgent}
-      />
+      <AgentActivationModal agent={activatingAgent} isOpen={showActivationModal} onClose={() => { setShowActivationModal(false); setActivatingAgent(null); }} onActivate={handleActivateAgent} />
     </div>
   );
 }
