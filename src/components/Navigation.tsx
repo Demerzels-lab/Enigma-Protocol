@@ -80,7 +80,7 @@ export default function Navigation() {
                 <Github className="w-4 h-4" />
               </a>
               <a
-                href="https://x.com/EnigmaProtocol"
+                href="https://x.com/enigmaprotocol1"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 text-neutral-400 hover:text-white transition-colors"

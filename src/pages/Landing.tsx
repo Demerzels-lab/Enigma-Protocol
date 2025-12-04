@@ -263,9 +263,9 @@ export default function Landing() {
               <CoordinateLabel x={12} y={24} className="-top-24 left-0" />
               
               <div className="mb-8">
-                <h1 className="text-[13vw] lg:text-[8rem] leading-[0.8] font-display font-bold tracking-tighter text-white mix-blend-difference">
+                <h1 className="text-[13vw] lg:text-[8rem] leading-[0.8] font-display font-bold tracking-tighter text-white">
                   <RollingText text="THE" />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-400 via-accent-500 to-accent-600 block drop-shadow-[0_0_20px_rgba(0,224,208,0.4)]">
+                  <span className="text-white block drop-shadow-[0_0_20px_rgba(0,224,208,0.4)]">
                     <RollingText text="VISION" delay={0.15} />
                   </span>
                 </h1>
