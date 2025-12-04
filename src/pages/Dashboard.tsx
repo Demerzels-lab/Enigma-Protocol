@@ -1,8 +1,9 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { TrendingUp, Activity, Bot, Shield, ArrowUpRight, ArrowDownRight, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWallet } from '../contexts/WalletContext';
-import { generateMockAgents, generateMockTransactions, Transaction, Agent } from '../lib/mockData';
+import { generateMockTransactions, Transaction, Agent } from '../lib/mockData';
+import { getActiveSimulationAgents } from '../lib/simulationStore'; 
 
 export default function Dashboard() {
   const { account } = useWallet();
@@ -25,25 +26,36 @@ export default function Dashboard() {
     setIsLoading(true);
     
     setTimeout(() => {
-      const allAgents = generateMockAgents();
-      const activeAgents = allAgents.filter(a => a.status === 'active').slice(0, 3);
+      // 1. GET ACTIVE AGENTS FROM STORE
+      // This retrieves the agents you activated in the Marketplace!
+      const activeAgents = getActiveSimulationAgents();
       setAgents(activeAgents);
 
-      // Initial batch of transactions
+      // 2. Get Mock Transactions (Keep these random for liveliness)
       const mockTxs = generateMockTransactions(8);
       setTransactions(mockTxs);
 
-      const avgApy = activeAgents.reduce((acc, curr) => acc + curr.performance_metrics.averageApy, 0) / activeAgents.length;
+      // 3. Recalculate Portfolio based on these specific agents
+      // If activeAgents is empty, APY is 0. If you have agents, it averages their APY.
+      const avgApy = activeAgents.length > 0 
+        ? activeAgents.reduce((acc, curr) => acc + curr.performance_metrics.averageApy, 0) / activeAgents.length
+        : 0;
+
+      // Base value of the user's wallet
+      const baseValue = 12450.80;
+      // Add fake "profit" based on number of active agents to show impact
+      const boostedValue = baseValue + (activeAgents.length * 1542.20);
 
       setPortfolio({
-        totalValue: 12450.80, 
+        totalValue: boostedValue, 
         apy: parseFloat(avgApy.toFixed(2)),
         activeAgents: activeAgents.length,
-        privacyStatus: 'Maximum'
+        // Privacy status upgrades if you have active agents running
+        privacyStatus: activeAgents.length > 0 ? 'Maximum' : 'Standard'
       });
 
       setIsLoading(false);
-    }, 1200);
+    }, 1000);
   };
 
   // --- 2. Live Data Simulation Effects ---
@@ -53,7 +65,7 @@ export default function Dashboard() {
     if (isLoading) return;
 
     const txInterval = setInterval(() => {
-      // 30% chance to add a new transaction to make it feel organic (not robotic)
+      // 30% chance to add a new transaction to make it feel organic
       if (Math.random() > 0.7) {
         const newTx = generateMockTransactions(1)[0];
         // Set timestamp to "now"
@@ -76,7 +88,7 @@ export default function Dashboard() {
     const priceInterval = setInterval(() => {
       setPortfolio(prev => ({
         ...prev,
-        // Fluctuate value by -0.5% to +0.5%
+        // Fluctuate value by -0.5% to +0.5% to mimic crypto volatility
         totalValue: prev.totalValue * (1 + (Math.random() * 0.01 - 0.005))
       }));
     }, 3000);
@@ -181,6 +193,12 @@ export default function Dashboard() {
               <div className="space-y-4">
                 {isLoading ? (
                   [1, 2, 3].map(i => <div key={i} className="h-24 bg-[#030505] border border-neutral-800 animate-pulse" />)
+                ) : agents.length === 0 ? (
+                  // Empty State for Agents
+                  <div className="p-8 border border-dashed border-neutral-800 text-center">
+                    <p className="text-neutral-500 font-mono text-xs">NO_AGENTS_DEPLOYED</p>
+                    <a href="/marketplace" className="text-accent-500 text-xs hover:underline mt-2 block">Go to Marketplace</a>
+                  </div>
                 ) : (
                   agents.map((agent) => (
                     <div
@@ -224,7 +242,6 @@ export default function Dashboard() {
               </div>
               
               <div className="bg-[#030505] border border-neutral-800 overflow-hidden relative">
-                {/* Scanline decoration */}
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent-500/50 to-transparent opacity-20" />
                 
                 <div className="overflow-x-auto">
@@ -238,7 +255,6 @@ export default function Dashboard() {
                         <th className="p-4 text-[10px] font-mono uppercase tracking-widest text-neutral-500 text-right">Time</th>
                       </tr>
                     </thead>
-                    {/* Animated Table Body */}
                     <tbody className="divide-y divide-neutral-800">
                       <AnimatePresence initial={false} mode='popLayout'>
                         {isLoading ? (
