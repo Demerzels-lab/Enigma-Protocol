@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Wallet, Github, Twitter, ArrowRight, LogIn } from 'lucide-react';
+import { Menu, X, Wallet, Github, Twitter, ArrowRight, LogIn, Shield } from 'lucide-react';
 import { useState } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 
@@ -8,6 +8,9 @@ export default function Navigation() {
   const location = useLocation();
   const navigate = useNavigate();
   const { account, connectWallet, disconnectWallet, isConnecting } = useWallet();
+
+  // Check if user is a guest
+  const isGuest = localStorage.getItem('enigma_guest') === 'true';
 
   // Define public vs private routes
   const navItems = [
@@ -105,6 +108,24 @@ export default function Navigation() {
                   Disconnect
                 </button>
               </div>
+            ) : isGuest ? (
+              <div className="flex items-center space-x-3 ml-2">
+                <div className="px-4 py-2 bg-neutral-900 border border-neutral-800 rounded-md flex items-center space-x-2 group hover:border-accent-500/30 transition-colors">
+                  <div className="w-1.5 h-1.5 bg-accent-500 rounded-full shadow-[0_0_8px_rgba(0,224,208,0.8)]"></div>
+                  <Shield className="w-3 h-3 text-neutral-400" />
+                  <span className="text-xs font-mono text-neutral-300">GUEST</span>
+                </div>
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('enigma_guest');
+                    localStorage.removeItem('enigma_user');
+                    navigate('/auth');
+                  }}
+                  className="px-4 py-2 border border-accent-500/30 text-accent-500 rounded-md text-xs font-mono hover:bg-accent-500/10 hover:text-accent-400 transition-all uppercase tracking-widest"
+                >
+                  Connect Wallet
+                </button>
+              </div>
             ) : (
               <div className="flex items-center space-x-3">
                 {/* On Landing page, we might want a direct Connect button, or a login button to /auth */}
@@ -171,6 +192,24 @@ export default function Navigation() {
                   className="w-full px-4 py-3 bg-red-900/10 border border-red-900/30 text-red-500 rounded-md text-center font-mono text-xs uppercase tracking-widest"
                 >
                   Disconnect
+                </button>
+              </div>
+            ) : isGuest ? (
+              <div className="pt-4 mt-4 border-t border-neutral-800 space-y-3 px-4">
+                <div className="flex items-center space-x-2 text-neutral-400 font-mono text-xs">
+                  <div className="w-2 h-2 bg-accent-500 rounded-full"></div>
+                  <span>GUEST MODE</span>
+                </div>
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('enigma_guest');
+                    localStorage.removeItem('enigma_user');
+                    navigate('/auth');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-3 bg-accent-500/10 border border-accent-500/30 text-accent-500 rounded-md text-center font-mono text-xs uppercase tracking-widest"
+                >
+                  Connect Wallet
                 </button>
               </div>
             ) : (

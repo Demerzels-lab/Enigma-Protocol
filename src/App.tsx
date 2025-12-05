@@ -14,7 +14,10 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { account } = useWallet();
   const location = useLocation();
 
-  if (!account) {
+  // Check if user is authenticated (wallet connected) or is a guest
+  const isAuthenticated = account || localStorage.getItem('enigma_guest') === 'true';
+
+  if (!isAuthenticated) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 

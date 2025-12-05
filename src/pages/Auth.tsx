@@ -79,6 +79,18 @@ export default function Auth() {
     }
   };
 
+  const loginAsGuest = () => {
+    // Store guest session
+    localStorage.setItem('enigma_guest', 'true');
+    localStorage.setItem('enigma_user', JSON.stringify({
+      isGuest: true,
+      walletAddress: 'GUEST_USER',
+      privacyLevel: 'standard'
+    }));
+    
+    navigate('/dashboard');
+  };
+
   const privacyFeatures = [
     'Wallet Signature - Cryptographic proof of wallet ownership',
     'Zero-knowledge Commitment - Hash-based privacy preservation', 
@@ -136,14 +148,33 @@ export default function Auth() {
               )}
 
               {!account ? (
-                <button
-                  onClick={connectWallet}
-                  disabled={isConnecting}
-                  className="w-full px-6 py-4 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-700 transition-all duration-fast shadow-glow hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center space-x-2"
-                >
-                  <Wallet className="w-5 h-5" />
-                  <span>{isConnecting ? 'Connecting...' : 'Connect MetaMask Wallet'}</span>
-                </button>
+                <div className="space-y-3">
+                  <button
+                    onClick={connectWallet}
+                    disabled={isConnecting}
+                    className="w-full px-6 py-4 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-700 transition-all duration-fast shadow-glow hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center space-x-2"
+                  >
+                    <Wallet className="w-5 h-5" />
+                    <span>{isConnecting ? 'Connecting...' : 'Connect MetaMask Wallet'}</span>
+                  </button>
+                  
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-neutral-400/20" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-neutral-100 px-2 text-neutral-400">or</span>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={loginAsGuest}
+                    className="w-full px-6 py-4 bg-neutral-50 border border-neutral-400/30 text-neutral-700 rounded-xl font-semibold hover:bg-neutral-100 hover:border-neutral-400/50 transition-all duration-fast hover:scale-105 flex items-center justify-center space-x-2"
+                  >
+                    <Shield className="w-5 h-5" />
+                    <span>Continue as Guest</span>
+                  </button>
+                </div>
               ) : (
                 <button
                   onClick={generateZKProof}

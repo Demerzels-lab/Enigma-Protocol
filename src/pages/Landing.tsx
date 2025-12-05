@@ -234,7 +234,9 @@ export default function Landing() {
       try {
         const { count } = await supabase.from('ai_agents').select('*', { count: 'exact', head: true }).eq('active', true);
         if (count) setStats(prev => ({ ...prev, agents: count }));
-      } catch (e) {}
+      } catch (e) {
+        // Silently handle stats fetch error
+      }
     };
     fetchStats();
   }, []);
@@ -290,10 +292,6 @@ export default function Landing() {
                       <span className="w-1.5 h-1.5 bg-accent-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(0,224,208,1)]" />
                       Enter Protocol
                     </button>
-                  </Link>
-                  <Link to="/docs" className="group flex items-center gap-2 px-4 py-2">
-                    <span className="font-mono text-xs tracking-widest text-neutral-500 group-hover:text-accent-400 uppercase transition-colors">Read Documentation</span>
-                    <ArrowRight className="w-3 h-3 text-neutral-500 group-hover:text-accent-500 group-hover:translate-x-1 transition-all" />
                   </Link>
                 </div>
               </motion.div>
